@@ -37,12 +37,16 @@ class MyLlm:
     def chat(self, prompt:str, isStream = True, needFullConvo = False):
         # Check if needs any online search
         if self.__needOnlineSearch__(prompt):
-            search_results = self.__web_search__(prompt)
-            augmented_prompt = f"""User question: {prompt}
-                Web search results:
-                {search_results}
-                Answer based on the search results above."""
-            self.conversation_history.append({"role": "user", "content": augmented_prompt})
+            try:
+                search_results = self.__web_search__(prompt)
+                augmented_prompt = f"""User question: {prompt}
+                    Web search results:
+                    {search_results}
+                    Answer based on the search results above."""
+                self.conversation_history.append({"role": "user", "content": augmented_prompt})
+            except Exception:
+                print("[System] No WiFi connection. For updated results, connect to WiFi.")
+                self.conversation_history.append({"role": "user", "content": prompt})
         else:
             self.conversation_history.append({"role": "user", "content": prompt})
 
@@ -50,7 +54,7 @@ class MyLlm:
             "model": self.Model,
             "messages": self.conversation_history, 
             "options": {
-                "num_predict": 150,
+                "num_predict": 512,
                 "temperature": self.ModelTemperature
             },
             "stream": isStream
