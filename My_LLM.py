@@ -31,7 +31,8 @@ class MyLlm:
             return "\n".join([f"- {r['title']}: {r['body']}" for r in results])
 
     def clearChat(self):
-        self.conversation_history = None
+        self.conversation_history.clear()
+        print("[System] Chat Cleared")
     
     def chat(self, prompt:str, isStream = True, needFullConvo = False):
         # Check if needs any online search
@@ -56,12 +57,15 @@ class MyLlm:
         }
 
         RES = requests.post(self.SERVER_URL, json=data, stream=isStream)
-        fullResponse = None
+        response = None
+
+        print("‣ ",end="")
         if isStream:
             response = self.__chat_with_stream__(RES)
         else:
             response = self.__chat_without_stream__(RES)
         
+        self.conversation_history.append({"role": "assistant", "content": response})
         return response
         
 
