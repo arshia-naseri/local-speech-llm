@@ -34,7 +34,7 @@ class MyLlm:
         self.conversation_history.clear()
         print("[System] Chat Cleared")
     
-    def chat(self, prompt:str, isStream = True, needFullConvo = False):
+    def chat(self, prompt:str, isStream = True, needFullConvo = False, print_output = True):
         # Check if needs any online search
         if self.__needOnlineSearch__(prompt):
             try:
@@ -52,7 +52,7 @@ class MyLlm:
 
         data = {
             "model": self.Model,
-            "messages": self.conversation_history, 
+            "messages": self.conversation_history,
             "options": {
                 "num_predict": 512,
                 "temperature": self.ModelTemperature
@@ -63,12 +63,13 @@ class MyLlm:
         RES = requests.post(self.SERVER_URL, json=data, stream=isStream)
         response = None
 
-        print("‣ ",end="")
+        if print_output:
+            print("‣ ",end="")
         if isStream:
-            response = self.__chat_with_stream__(RES)
+            response = self.__chat_with_stream__(RES, print_output)
         else:
             response = self.__chat_without_stream__(RES)
-        
+
         self.conversation_history.append({"role": "assistant", "content": response})
         return response
         
@@ -76,7 +77,7 @@ class MyLlm:
     def __needOnlineSearch__(self, prompt:str):
         return any(word in prompt.lower() for word in self.__ONLINE_TRIGGER_LIST__)
     
-    def __chat_with_stream__(self, RES):
+    def __chat_with_stream__(self, RES, print_output=True):
         full_response = ""
         for line in RES.iter_lines():
             if line:
@@ -84,8 +85,10 @@ class MyLlm:
                 if 'message' in json_response:
                     chunk = json_response['message']['content']
                     full_response += chunk
-                    print(chunk, end="", flush=True)
-        print("")
+                    if print_output:
+                        print(chunk, end="", flush=True)
+        if print_output:
+            print("")
         return full_response
 
     def __chat_without_stream__(self, RES):

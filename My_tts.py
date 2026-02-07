@@ -22,9 +22,18 @@ class MyTTS:
         self.voice = self.__VOICES__[voiceName]
         self.slowness = slowness
         self.sentence_silence = sentence_silence
+        self._piper_proc = None
+        self._play_proc = None
+
+    def stop(self):
+        for proc in (self._play_proc, self._piper_proc):
+            if proc and proc.poll() is None:
+                proc.kill()
+        self._piper_proc = None
+        self._play_proc = None
 
     def process_play(self, text: str):
-        piper_proc = subprocess.Popen(
+        self._piper_proc = subprocess.Popen(
             [
                 "piper",
                 "--model",
@@ -39,7 +48,7 @@ class MyTTS:
             stdout=subprocess.PIPE,
         )
 
-        play_proc = subprocess.Popen(
+        self._play_proc = subprocess.Popen(
             [
                 "ffplay",
                 "-nodisp",
@@ -53,12 +62,14 @@ class MyTTS:
                 "-i",
                 "pipe:0",
             ],
-            stdin=piper_proc.stdout,
+            stdin=self._piper_proc.stdout,
         )
 
-        piper_proc.stdin.write(text.encode("utf-8"))
-        piper_proc.stdin.close()
-        play_proc.wait()
+        self._piper_proc.stdin.write(text.encode("utf-8"))
+        self._piper_proc.stdin.close()
+        self._play_proc.wait()
+        self._piper_proc = None
+        self._play_proc = None
 
     def process_save(self, text: str, output_file: str, play: bool = False):
         piper_proc = subprocess.Popen(
