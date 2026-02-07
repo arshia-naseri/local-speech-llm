@@ -57,7 +57,7 @@ The final implementation (`voice_assistant.py`) wraps this pipeline in a tkinter
 
 1. Clone the repository:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/arshia-naseri/local-speech-llm
    cd local-speech-llm
    ```
 
