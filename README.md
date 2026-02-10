@@ -65,7 +65,7 @@ The final implementation (`voice_assistant.py`) wraps this pipeline in a tkinter
    ```bash
    python -m venv venv
    source venv/bin/activate
-   pip install openai-whisper torch sounddevice numpy requests piper-tts duckduckgo-search
+   pip install -r requirements.txt
    ```
 
 3. Download models:

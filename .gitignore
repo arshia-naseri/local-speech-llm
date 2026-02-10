@@ -4,3 +4,4 @@ __pycache__/
 models/
 voices/*.onnx
 voices/*.onnx.json
+CLAUDE.md

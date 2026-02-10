@@ -1,0 +1,7 @@
+openai-whisper
+torch
+sounddevice
+numpy
+requests
+piper-tts
+duckduckgo-search
