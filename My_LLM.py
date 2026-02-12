@@ -10,6 +10,8 @@ class MyLlm:
     instructions: str = None
     Model: str = None
     ModelTemperature = 0.7
+    getTokenCount: bool = None
+    totalTokensUsed: int = 0
     # Private
     __depth_search__ = 10
     __ONLINE_TRIGGER_LIST__ = [
@@ -23,7 +25,12 @@ class MyLlm:
     ]  # If see these keywords, search online
     __LLM_CONFIG_INSTRUCTION__ = "Be concise. Answer in 1-3 sentences. Do not give text in latex. Plain text"  # Things I want to set for my llm
 
-    def __init__(self, instructions: str = None, Model: str = "llama3.2"):
+    def __init__(
+        self,
+        instructions: str = None,
+        Model: str = "llama3.2",
+        getTokenCount: bool = False,
+    ):
         self.Model = Model
         self.instructions = instructions if instructions else ""
         self.conversation_history = [
@@ -32,6 +39,7 @@ class MyLlm:
                 "content": f" {self.instructions}. {self.__LLM_CONFIG_INSTRUCTION__}",
             }
         ]
+        self.getTokenCount = getTokenCount
 
     def __web_search__(self, query, max_results=__depth_search__):
         print("Searching Online ...")
@@ -41,7 +49,7 @@ class MyLlm:
 
     def clearChat(self):
         self.conversation_history.clear()
-        print("[System] Chat Cleared")
+        print("[🧹] Chat Cleared")
 
     def chat(self, prompt: str, isStream=True, needFullConvo=False, print_output=True):
         # Check if needs any online search
@@ -83,6 +91,17 @@ class MyLlm:
         self.conversation_history.append({"role": "assistant", "content": response})
         return response
 
+    def __format_tokens__(self, count):
+        if count >= 1000:
+            return f"{count / 1000:.1f}k"
+        return str(count)
+
+    def __print_token_count__(self, prompt_tokens, eval_tokens):
+        self.totalTokensUsed = prompt_tokens + eval_tokens
+        print(
+            f"\n[🤖] Tokens Burned 🔥: {self.__format_tokens__(self.totalTokensUsed)}"
+        )
+
     def __needOnlineSearch__(self, prompt: str):
         return any(word in prompt.lower() for word in self.__ONLINE_TRIGGER_LIST__)
 
@@ -96,12 +115,21 @@ class MyLlm:
                     full_response += chunk
                     if print_output:
                         print(chunk, end="", flush=True)
+                if json_response.get("done") and self.getTokenCount:
+                    prompt_tokens = json_response.get("prompt_eval_count", 0)
+                    eval_tokens = json_response.get("eval_count", 0)
+                    self.__print_token_count__(prompt_tokens, eval_tokens)
         if print_output:
             print("")
         return full_response
 
     def __chat_without_stream__(self, RES):
-        return RES.json()["message"]["content"]
+        data = RES.json()
+        if self.getTokenCount:
+            prompt_tokens = data.get("prompt_eval_count", 0)
+            eval_tokens = data.get("eval_count", 0)
+            self.__print_token_count__(prompt_tokens, eval_tokens)
+        return data["message"]["content"]
 
     # ! Requires string cleaning
     def __str__(self):
